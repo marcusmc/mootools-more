@@ -38,7 +38,7 @@ Fx.Shake = new Class({
 		property = this.property || args.property;
 		times = args.times || this.options.times;
 		dbug.log(times);
-		this.stepDur = this.duration / (times + 2);
+		this.stepDur = this.duration / (times + 1);
 		this._getTransition = this.getTransition;
 		this.origin = this.element.getStyle(property).toInt()||0;
 		this.shakeChain.chain(
@@ -47,7 +47,7 @@ Fx.Shake = new Class({
 					function() {
 							this.stopTimer();
 							this.getTransition = this._getTransition;
-							this.options.duration = this.stepDur;
+							this.options.duration = this.stepDur / 2;
 							//stage three, return to origin
 							this._start(property, this.origin);
 					}.bind(this)
@@ -63,7 +63,7 @@ Fx.Shake = new Class({
 				this._start(property, this.origin - args.distance);
 			}.bind(this)
 		);
-		this.options.duration = this.stepDur;
+		this.options.duration = this.stepDur / 2;
 		//stage 1: offset to one side
 		return this._start(property, this.origin + args.distance);
 	},
