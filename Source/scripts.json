@@ -219,6 +219,11 @@
 			"desc": "Class for creating and manipulating colors in JavaScript. Supports HSB -> RGB Conversions and vice versa."
 		},
 
+		"Conveyor": {
+			"deps": ["Class.Extras", "Element"],
+			"desc": "Class for creating and manipulating colors in JavaScript. Supports HSB -> RGB Conversions and vice versa."
+		},
+
 		"Group": {
 			"deps": ["Class.Extras"],
 			"desc": "Class for monitoring collections of events."

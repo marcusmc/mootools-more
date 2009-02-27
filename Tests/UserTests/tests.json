@@ -40,6 +40,7 @@
 	},
 	"Utilities":{
 		"Assets":['css', 'image', 'images', 'javascript'],
+		"Conveyor":['all'],
 		"Group":['all'],
 		"IframeShim":['all']
 	}
