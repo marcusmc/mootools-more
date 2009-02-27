@@ -16,8 +16,7 @@ var Conveyor = new Class({
 	options: {/*
 		onForward: $empty,
 		onBack: $empty,
-		onComplete: $empty,
-		onStart: $empty,*/
+		onComplete: $empty*/
 		start: 0
 	},
 
@@ -86,6 +85,7 @@ var Conveyor = new Class({
 		var to = this.now + howMany;
 		if (to > this.current.length) to = to - this.current.length;
 		this.to(to);
+		this.fireEvent('forward', to);
 	},
 	
 	back: function(howMany) {
@@ -93,6 +93,7 @@ var Conveyor = new Class({
 		var to = this.now - howMany;
 		if (to < 0) to = this.current.length + to;
 		this.to(to);
+		this.fireEvent('back', to);
 	}
 
 });
