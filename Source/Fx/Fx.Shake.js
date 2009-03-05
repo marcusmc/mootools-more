@@ -69,7 +69,9 @@ Fx.Shake = new Class({
 	},
 
 	onCancel: function(){
-		return this.parent().shakeChain.clearChain();
+		this.parent();
+		this.shakeChain.clearChain();
+		return this;
 	}
 
 });
