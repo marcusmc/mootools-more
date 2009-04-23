@@ -27,7 +27,7 @@
 		},
 
 		"Class.Binds": {
-			"deps": ["More", "Class"],
+			"deps": ["More", "Class", "Class.Extras"],
 			"desc": "Adds the Binds Mutator to all classes."
 		},
 

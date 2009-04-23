@@ -42,8 +42,12 @@ Drag.Move = new Class({
 	},
 
 	start: function(event){
+		dbug.log('start');
 		if (this.container){
-			var ccoo = this.container.getCoordinates(this.element.getOffsetParent()), cbs = {}, ems = {};
+			var offsetParent = this.element.getOffsetParent();
+			dbug.log(offsetParent)
+			var ccoo = this.container.getCoordinates(offsetParent), cbs = {}, ems = {};
+			dbug.log(ccoo);
 
 			['top', 'right', 'bottom', 'left'].each(function(pad){
 				cbs[pad] = this.container.getStyle('border-' + pad).toInt();
@@ -58,18 +62,25 @@ Drag.Move = new Class({
 					ems[key] = 0;
 				});
 			}
-			if (this.container == this.element.getOffsetParent()) {
+			if (this.container == offsetParent) {
+				dbug.log('ems.left: %s, ccoo.right: %s - cbs.left: %s - cbs.right: %s - width: %s + ems.right: %s == %s, %s', 
+									ems.left, ccoo.right, cbs.left, cbs.right, width, ems.right, 0 - ems.left, 
+									ccoo.right - cbs.left - cbs.right - width + ems.right)
 				this.options.limit = {
 					x: [0 - ems.left, ccoo.right - cbs.left - cbs.right - width + ems.right],
 					y: [0 - ems.top, ccoo.bottom - cbs.top - cbs.bottom - height + ems.bottom]
 				};
 			} else {
+				dbug.log('ccoo.left: %s + cbs.left: %s - ems.left: %s, ccoo.right: %s - cbs.right: %s - width: %s + ems.right: %s == %s, %s',
+				 					ccoo.left, cbs.left, ems.left, ccoo.right, cbs.right, width, ems.right,
+									ccoo.left + cbs.left - ems.left, ccoo.right - cbs.right - width + ems.right)
 				this.options.limit = {
-					x: [ccoo.left + cbs.left - ems.left, ccoo.right - cbs.right - width + ems.right],
+//				    6           4           2         272          4           42      2
+					x: [ccoo.left + cbs.left - ems.left - 0, ccoo.right - cbs.right - width + ems.right -0],
 					y: [ccoo.top + cbs.top - ems.top, ccoo.bottom - cbs.bottom - height + ems.bottom]
 				};
 			}
-
+			dbug.log(this.options.limit.x[0], this.options.limit.x[1], this.options.limit.y[0], this.options.limit.y[1]);
 		}
 		if (this.options.precalculate){
 			this.positions = this.droppables.map(function(el) {

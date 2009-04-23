@@ -9,22 +9,21 @@ Script: Class.Binds.js
 		Aaron Newton
 */
 
-Class.Mutators.Binds = function(binds){
-    return binds;
+Class.events = new Events();
+
+Class.Mutators.initialize = function(initialize){
+	return function(){
+		Class.events.fireEvent('initialize', this);
+		var inited = initialize.apply(this, arguments);
+		Class.events.fireEvent('afterInitialize', this);
+		return inited;
+	}
 };
 
-(function(){
-	var orig = Class.Mutators.initialize;
-
-	Class.Mutators.initialize = function(initialize){
-		if (orig) orig.apply(Class.Mutators, initialize);
-		return function(){
-			$splat(this.Binds).each(function(name){
-				var original = this[name];
-				if (original) this[name] = original.bind(this);
-			}, this);
-			return initialize.apply(this, arguments);
-		};
-
-	};
-})();
+Class.events.addEvent('initialize', function(instance){
+	$splat(instance.Binds).each(function(name){
+		var original = instance[name];
+		if (original) instance[name] = original.bind(instance);
+	});
+	delete instance.Binds;
+});
