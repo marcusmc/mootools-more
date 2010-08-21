@@ -14,7 +14,7 @@ authors:
   - Aaron Newton
 
 requires:
-  - /Keyboard
+  - /Keyboard.Extras
   - /HtmlTable
   - /Class.refactor
   - /Element.Delegation
@@ -36,7 +36,8 @@ HtmlTable = Class.refactor(HtmlTable, {
 		classSelectable: 'table-selectable',
 		shiftForMultiSelect: true,
 		allowMultiSelect: true,
-		selectable: false
+		selectable: false,
+		noSelectForHiddenRows: true
 	},
 
 	initialize: function(){
@@ -91,7 +92,11 @@ HtmlTable = Class.refactor(HtmlTable, {
 	isSelected: function(row){
 		return this._selectedRows.contains(row);
 	},
-	
+
+	getSelected: function(){
+		return this._selectedRows;
+	},
+
 	deselectRow: function(row, _nocheck){
 		if (!_nocheck && !this.body.getChildren().contains(row)) return;
 		this._selectedRows.erase(row);
@@ -114,12 +119,13 @@ HtmlTable = Class.refactor(HtmlTable, {
 		return this.selectAll(true);
 	},
 
-	selectRange: function(startRow, endRow, _deselect){
+	selectRange: function(startRow, endRow, selectHidden, _deselect){
 		if (!this.options.allowMultiSelect) return;
 		var started,
 		    method = _deselect ? 'deselectRow' : 'selectRow';
 
 		$$(this.body.rows).each(function(row) {
+			if (!selectHidden && !row.isDisplayed()) return;
 			if (row == startRow || row == endRow) started = !started;
 			if (started || row == startRow || row == endRow) this[_deselect ? 'deselectRow' : 'selectRow'](row, true);
 		}, this);
@@ -128,7 +134,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 	},
 
 	deselectRange: function(startRow, endRow, _nocheck){
-		this.selectRange(startRow, endRow, _nocheck);
+		this.selectRange(startRow, endRow, !this.options.noSelectForHiddenRows, _nocheck);
 	},
 /*
 	Private methods:
@@ -161,7 +167,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 
 	_shiftFocus: function(offset, event){
 		if (!this._focused) return this.selectRow(this.body.rows[0], event);
-		var to = this._getRowByOffset(offset);
+		var to = this._getRowByOffset(offset, !this.options.noSelectForHiddenRows);
 		if (to === null || this._focused == this.body.rows[to]) return this;
 		this.toggleRow(this.body.rows[to], event);
 	},
@@ -172,14 +178,29 @@ HtmlTable = Class.refactor(HtmlTable, {
 		if (event.rightClick) this.selectRow(row);
 		else this.toggleRow(row);
 		if (event.shift) {
-			this.selectRange(this._rangeStart || this.body.rows[0], row, this._rangeStart ? !this.isSelected(row) : true);
+			this.selectRange(this._rangeStart || this.body.rows[0], row, !this.options.noSelectForHiddenRows, this._rangeStart ? !this.isSelected(row) : true);
 		}
 		this._rangeStart = row;
 	},
 
-	_getRowByOffset: function(offset){
+	_getRowByOffset: function(offset, includeHiddenRows){
 		if (!this._focused) return 0;
-		var index = Array.indexOf(this.body.rows, this._focused) + offset;
+		var index = Array.indexOf(this.body.rows, this._focused);
+		if ((index == 0 && offset < 0) || (index == this.body.rows.length -1 && offset > 0)) return null;
+		if (includeHiddenRows) {
+			index += offset;
+		} else {
+			var multiplier = offset > 0 ? 1 : -1;
+			var i = 0,
+			    count = 0,
+			    row = this.body.rows[index];
+			while ((i * multiplier) < (offset * multiplier) && row) {
+				count = count + (1 * multiplier);
+				row = this.body.rows[count + index];
+				if (row.isDisplayed()) i = i + (1 * multiplier);
+			}
+			index += count;
+		}
 		if (index < 0) index = null;
 		if (index >= this.body.rows.length) index = null;
 		return index;
@@ -202,7 +223,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 					var mover = function(e){
 						$clear(timer);
 						e.preventDefault();
-						var to = this.body.rows[this._getRowByOffset(offset)];
+						var to = this.body.rows[this._getRowByOffset(offset, !this.options.noSelectForHiddenRows)];
 						if (e.shift && to && this.isSelected(to)) {
 							this.deselectRow(this._focused);
 							this._focused = to;
