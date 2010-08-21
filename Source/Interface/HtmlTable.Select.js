@@ -75,7 +75,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 	selectRow: function(row, _nocheck){
 		//private variable _nocheck: boolean whether or not to confirm the row is in the table body
 		//added here for optimization when selecting ranges
-		if (!_nocheck && !this.body.getChildren().contains(row)) return;
+		if (this.isSelected(row) || (!_nocheck && !this.body.getChildren().contains(row))) return;
 		if (!this.options.allowMultiSelect) this.selectNone();
 
 		if (!this.isSelected(row)) {
@@ -93,7 +93,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 	},
 	
 	deselectRow: function(row, _nocheck){
-		if (!_nocheck && !this.body.getChildren().contains(row)) return;
+		if (!this.isSelected(row) || (!_nocheck && !this.body.getChildren().contains(row))) return;
 		this._selectedRows.erase(row);
 		row.removeClass(this.options.classRowSelected);
 		this.fireEvent('rowUnfocus', [row, this._selectedRows]);
@@ -102,11 +102,10 @@ HtmlTable = Class.refactor(HtmlTable, {
 
 	selectAll: function(selectNone){
 		if (!this.options.allowMultiSelect && !selectNone) return;
-		if (selectNone) {
-			this._selectedRows = this._selectedRows.removeClass(this.options.classRowSelected).empty();
-		} else {
-			this._selectedRows.combine(this.body.rows).addClass(this.options.classRowSelected);
-		}
+		Array.each(this.body.rows, function(row){
+			if (selectNone) this.deselectRow(row);
+			else this.selectRow(row);
+		}, this);
 		return this;
 	},
 
@@ -204,12 +203,15 @@ HtmlTable = Class.refactor(HtmlTable, {
 						e.preventDefault();
 						var to = this.body.rows[this._getRowByOffset(offset)];
 						if (e.shift && to && this.isSelected(to)) {
+							console.log('moving, deslecting row');
 							this.deselectRow(this._focused);
 							this._focused = to;
 						} else {
 							if (to && (!this.options.allowMultiSelect || !e.shift)) {
+								console.log('select none');
 								this.selectNone();
 							}
+							console.log('shifting focus');
 							this._shiftFocus(offset, e);
 						}
 						if (held) {
