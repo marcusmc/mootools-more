@@ -19,9 +19,9 @@ Turns a tree into a set of nested, expandable/collapsable rows.
 ### Options
 
 * all options defined by [HtmlTable][], plus:
+* enableTree - (*boolean*) if *true* (defaults to *false*) the following options will be used to instantiate a tree view table.
 * injectExpandLinks - (*boolean*) if *true*, the default, link tags will be inserted into the first TD of each TR that is a parent. This option is ignored if the *noBuild* option is *true*.
 * expandClass - (*string*) the classname of the elements that, when clicked, expand a section; defaults to 'expand'.
-* addFolderClasses - (*boolean*) if *true*, the default, all TR elements that are parents will have the CSS class *table-folder* added. This option is ignored if the *noBuild* option is *true*.
 * baseIndentPadding - (*number*) the padding applied to the left of root nodes; defaults to 10 (px). This option is ignored if the *writeTreeCSS* option is *false*.
 * indentPadding - (*number*) the padding applied to the left of each child node times its depth plus the base indent padding. E.g. if the base padding is 10, and the indent padding is 15 (the defaults), then the first children are 25 pixels in, the second order children are 40 pixels in and so on. This option is ignored if the *writeTreeCSS* option is *false*.
 * writeTreeCSS - (*boolean*) if *true*, the default, HtmlTable will write a CSS *style* tag with 40 indentation rules based on the indentPadding and the baseIndentPadding options.
@@ -37,27 +37,35 @@ Turns a tree into a set of nested, expandable/collapsable rows.
 * onExpandSection - function executed when a row is expanded, meaning that all its children are now visible. Passed the row.
 * onCloseSection - function executed when a row is collapsed, meaning that all its children are now hidden. Passed the row.
 
-HtmlTable Method: attach {#HtmlTable:attach}
+### Notes
+
+* All TR nodes for tree view instances should have a CSS class defining their depth as 'table-depth-{integer}'. So the root nodes need 'table-depth-0' and each root nodes children need 'table-depth-1' and so on.
+* If you wish to avoid startup costs, you must hide all the rows that are not meant to be visible on startup yourself (typically all rows except the root nodes), add the expand links (by default, a simple anchor tag with the class name "expand"), and the folder class name (typically 'table-folder'). Then this class will lazily map out child nodes only when the user clicks to expand a section.
+* Typically the expand link is styled to be a block style element with a plus or triangle icon.
+* When a row is expanded, it is given the CSS class name 'table-expanded'. You can style the expand icon to change state based on this selector ('tr.table-expanded a.expand').
+* An example HTML and CSS styles can be found in [the Tests directory on github](http://github.com/mootools/mootools-more/blob/master/Tests/Interface/HtmlTable.Tree.html).
+
+HtmlTable Method: enableTree {#HtmlTable:enableTree}
 ----------------------------------------
 
-Attaches the click behaviors to the expand links (defaults to elements with the css class 'expand'; see the *expandClass* option).
+Attaches the click behaviors to the expand links (defaults to elements with the css class 'expand'; see the *expandClass* option). Also enables the keyboard shortcuts if the *useKeyboard* option is true.
 
 ### Syntax
 
-	myHtmlTable.attach();
+	myHtmlTable.enableTree();
 
 ### Returns
 
 * (*object*) This instance of HtmlTable.
 
-HtmlTable Method: dettach {#HtmlTable:dettach}
+HtmlTable Method: disableTree {#HtmlTable:disableTree}
 ----------------------------------------
 
-Detaches the click behaviors to the expand links.
+Detaches the click behaviors to the expand links and disables the keyboard if there is one.
 
 ### Syntax
 
-	myHtmlTable.detach();
+	myHtmlTable.disableTree();
 
 ### Returns
 
@@ -184,6 +192,75 @@ Returns *true* if the row is in its expanded state.
 
 ### Returns
 
-* (*object*) This instance of HtmlTable.
+* (*boolean*) *true* if the node is expanded.
+
+HtmlTable Method: isRowParent {#HtmlTable:isRowParent}
+----------------------------------------
+
+Returns *true* if the row has children.
+
+### Syntax
+
+	myHtmlTable.isRowParent(row);
+
+### Arguments
+
+1. row - (*element*) the TR element to check.
+
+### Returns
+
+* (*boolean*) *true* if the row is a parent.
+
+HtmlTable Method: getChildRows {#HtmlTable:getChildRows}
+----------------------------------------
+
+Returns the rows that are child rows of the one passed in. Note that it does NOT return grandchildren.
+
+### Syntax
+
+	myHtmlTable.getChildRows(row);
+
+### Arguments
+
+1. row - (*element*) the TR element to check.
+
+### Returns
+
+* (*array*) An array of TR elements that are children of the specified row.
+
+HtmlTable Method: getParentRow {#HtmlTable:getParentRow}
+----------------------------------------
+
+Returns the parent node of the one passed in. Root nodes return *undefined*.
+
+### Syntax
+
+	myHtmlTable.getParentRow(row);
+
+### Arguments
+
+1. row - (*element*) the row to get the parent of.
+
+### Returns
+
+* (*element*) the TR element that is the parent of the specified row.
+
+HtmlTable Method: getRowDepth {#HtmlTable:getRowDepth}
+----------------------------------------
+
+Returns the depth of the row in the tree (i.e. root nodes are 0, their children are 1, etc.)
+
+### Syntax
+
+	myHtmlTable.getRowDepth(row);
+
+### Arguments
+
+1. row - (*element*) the row to get the depth of.
+
+### Returns
+
+* (*number*) the depth value for the specified row.
+
 
 [HtmlTable]: /more/Interface/HtmlTable

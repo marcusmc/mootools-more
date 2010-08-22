@@ -217,7 +217,9 @@ HtmlTable = Class.refactor(HtmlTable, {
 			'contextmenu:relay(tr)': this._bound.clickRow
 		});
 		if (this.options.useKeyboard || this.keyboard){
-			if (!this.keyboard) {
+			if (!this.keyboard) this.keyboard = new Keyboard();
+			if (!this._selectKeysDefined) {
+				this._selectKeysDefined = true;
 				var timer, held;
 				var move = function(offset){
 					var mover = function(e){
@@ -250,16 +252,13 @@ HtmlTable = Class.refactor(HtmlTable, {
 					held = false;
 				};
 				
-				this.keyboard = new Keyboard({
-					events: {
-						'keydown:shift+up': move(-1),
-						'keydown:shift+down': move(1),
-						'keyup:shift+up': clear,
-						'keyup:shift+down': clear,
-						'keyup:up': clear,
-						'keyup:down': clear
-					},
-					active: true
+				this.keyboard.addEvents({
+					'keydown:shift+up': move(-1),
+					'keydown:shift+down': move(1),
+					'keyup:shift+up': clear,
+					'keyup:shift+down': clear,
+					'keyup:up': clear,
+					'keyup:down': clear
 				});
 				
 				var shiftHint = '';

@@ -37,9 +37,9 @@ HtmlTable = Class.refactor(HtmlTable, {
 		onExpandSection: $empty(row),
 		onCloseSection: $empty(row),
 */
+		enableTree: false,
 		injectExpandLinks: true,
 		expandClass: 'expand',
-		addFolderClasses: true,
 		baseIndentPadding: 10,
 		indentPadding: 15,
 		writeTreeCSS: true,
@@ -49,36 +49,45 @@ HtmlTable = Class.refactor(HtmlTable, {
 	initialize: function(){
 		this.previous.apply(this, arguments);
 		if (this.options.writeTreeCSS) this._writeCss();
-		this._buildTree();
-		this.attach();
+		this.tree = new Table();
+		if (this.options.enableTree) this.enableTree();
 	},
 
-	attach: function(){
-		if (!this.bound) {
-			this.bound = {
+	enableTree: function(){
+		if (!this.options.noBuild) this._buildTree();
+		if (!this._treeBound) {
+			this._treeBound = {
 				toggleExpand: this._toggleExpandHandler.bind(this),
 				keyExpand: function(){
 					if (this._focused) this.expandSection(this._focused);
 				}.bind(this),
 				keyClose: function(){
-					if (this._focused) this.closeSection(this._focused);
+					var row = this._focused;
+					if (row) {
+						if (this.isRowParent(row) && this.isExpanded(row)) {
+								this.closeSection(row);
+						} else if (this._selectEnabled){
+							this.deselectRow(row);
+							this.selectRow(this.getParentRow(row));
+						}
+					}
 				}.bind(this)
 			};
 		}
-		this.element.addEvent('click:relay(a.' + this.options.expandClass + ')', this.bound.toggleExpand);
+		this.element.addEvent('click:relay(a.' + this.options.expandClass + ')', this._treeBound.toggleExpand);
 		(function(){
 			if (this.options.useKeyboard && this.keyboard) {
 				this.keyboard.addShortcuts({
 					'Expand Section': {
 						keys: 'right',
 						shortcut: 'right arrow',
-						handler: this.bound.keyExpand,
+						handler: this._treeBound.keyExpand,
 						description: 'Expand the current row.'
 					},
 					'Close Section': {
 						keys: 'left',
 						shortcut: 'left arrow',
-						handler: this.bound.keyClose,
+						handler: this._treeBound.keyClose,
 						description: 'Close the current row.'
 					}
 				});
@@ -87,8 +96,8 @@ HtmlTable = Class.refactor(HtmlTable, {
 		return this;
 	},
 
-	detach: function(){
-		this.element.removeEvent('click:relay(a.' + this.options.expandClass + ')', this.bound.toggleExpand);
+	disableTree: function(){
+		this.element.removeEvent('click:relay(a.' + this.options.expandClass + ')', this._treeBound.toggleExpand);
 		return this;
 	},
 
@@ -103,7 +112,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 		this._makeRowParent(parent);
 		var rowData = this.tree.get(row),
 		    parentRowData = this.tree.get(parent),
-		    depth = this._getDepth(parent) + 1;
+		    depth = this.getRowDepth(parent) + 1;
 		if (!rowData) {
 			rowData = this._makeRowData(row);
 		} else if (rowData.parent && rowData.parent != parent){
@@ -135,7 +144,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 		row.setStyle('display', 'none');
 		rowData.hidden = true;
 		if (!doNotHideChildren){
-			this._getChildren(row).each(function(child){
+			this.getChildRows(row).each(function(child){
 				this.hideSection(child);
 			}, this);
 		}
@@ -149,7 +158,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 		row.setStyle('display', 'table-row');
 		rowData.hidden = false;
 		if (!doNotShowChildren && this.isExpanded(row)) {
-			this._getChildren(row).each(function(child){
+			this.getChildRows(row).each(function(child){
 				this.showSection(child);
 			}, this);
 		}
@@ -164,8 +173,9 @@ HtmlTable = Class.refactor(HtmlTable, {
 	},
 
 	expandSection: function(row){
+		if (this.isExpanded(row)) return this;
 		row.store('htmltable:open', true).addClass('table-expanded');
-		this._getChildren(row).each(function(child){
+		this.getChildRows(row).each(function(child){
 			this.showSection(child, true);
 			if (this.isExpanded(child)) this.expandSection(child);
 		}, this);
@@ -175,8 +185,9 @@ HtmlTable = Class.refactor(HtmlTable, {
 	},
 
 	closeSection: function(row){
+		if (!this.isExpanded(row)) return this;
 		row.store('htmltable:open', false).removeClass('table-expanded');
-		this._getChildren(row).each(function(child){
+		this.getChildRows(row).each(function(child){
 			this.hideSection(child);
 		}, this);
 		if (this.options.zebra) this.updateZebras();
@@ -188,6 +199,42 @@ HtmlTable = Class.refactor(HtmlTable, {
 		return row.retrieve('htmltable:open');
 	},
 
+	isRowParent: function(row){
+		return row.hasClass('table-folder');
+	},
+
+	getChildRows: function(row){
+		var rowData = this.tree.get(row);
+		if (rowData && rowData.children) return this.tree.get(row).children;
+		if (!rowData) rowData = this._makeRowData(row);
+		if (!rowData.children) rowData.children = [];
+		var depth = rowData.depth,
+		    nextAtDepth = row.getAllNext('tr.table-depth-' + depth),
+		    potentialKids = row.getAllNext('tr.table-depth-' + (depth + 1)),
+		    index = 0;
+		while (potentialKids[index] && potentialKids[index] != nextAtDepth) {
+			var kidData = this._makeRowData(potentialKids[index], null, true);
+			rowData.children.push(potentialKids[index]);
+			kidData.parent = row;
+			index++;
+		}
+		return rowData.children;
+	},
+
+	getParentRow: function(row){
+		return this.tree.get(row).parent;
+	},
+
+	getRowDepth: function(row){
+		var depth = row.retrieve('htmltable:depth');
+		if (depth != null) return depth;
+		var match = row.className.match(/table\-depth\-(\d+)/);
+		if (!match) depth = 0;
+		else depth = match[1].toInt();
+		row.store('htmltable:depth', depth);
+		return depth;
+	},
+
 	/* private methods */
 
 	_toggleExpandHandler: function(event, element){
@@ -197,7 +244,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 	},
 
 	_makeRowData: function(row, depth, doNotMakeChildren){
-		if (depth == null) depth = this._getDepth(row);
+		if (depth == null) depth = this.getRowDepth(row);
 		var rowData = {
 			row: row,
 			depth: depth
@@ -208,27 +255,26 @@ HtmlTable = Class.refactor(HtmlTable, {
 	},
 
 	_buildTree: function(){
-		this.tree = new Table();
-		if (!this.options.noBuild) {
-			var prevDepth = 0,
-			    prevRowAtDepth = [];
-			Array.each(this.body.rows, function(row){
-				var depth = this._getDepth(row);
-				var rowData = {
-					row: row,
-					children: [],
-					depth: depth
-				};
-				this.tree.set(row, rowData);
-				if (depth > 0) {
-					row.setStyle('display','none');
-					rowData.hidden = true;
-					var parent = prevRowAtDepth[depth - 1];
-					this.addRowToTree(row, parent);
-				}
-				prevRowAtDepth[depth] = row;
-			}, this);
-		}
+		if (this._treeBuilt) return;
+		this._treeBuilt = true;
+		var prevDepth = 0,
+		    prevRowAtDepth = [];
+		Array.each(this.body.rows, function(row){
+			var depth = this.getRowDepth(row);
+			var rowData = {
+				row: row,
+				children: [],
+				depth: depth
+			};
+			this.tree.set(row, rowData);
+			if (depth > 0) {
+				row.setStyle('display','none');
+				rowData.hidden = true;
+				var parent = prevRowAtDepth[depth - 1];
+				this.addRowToTree(row, parent);
+			}
+			prevRowAtDepth[depth] = row;
+		}, this);
 	},
 
 	_makeRowParent: function(row){
@@ -256,37 +302,6 @@ HtmlTable = Class.refactor(HtmlTable, {
 			if (Browser.Engine.trident) style.styleSheet.cssText = css;
 			else style.set('text', css);
 		}.bind(this));
-	},
-
-	_getChildren: function(row){
-		var rowData = this.tree.get(row);
-		if (rowData && rowData.children) return this.tree.get(row).children;
-		if (!rowData) rowData = this._makeRowData(row);
-		if (!rowData.children) rowData.children = [];
-		var depth = rowData.depth,
-		    nextAtDepth = row.getAllNext('tr.table-depth-' + depth),
-		    potentialKids = row.getAllNext('tr.table-depth-' + (depth + 1)),
-		    index = 0;
-		while (potentialKids[index] && potentialKids[index] != nextAtDepth) {
-			this._makeRowData(potentialKids[index], null, true);
-			rowData.children.push(potentialKids[index]);
-			index++;
-		}
-		return rowData.children;
-	},
-
-	_getParent: function(row){
-		return this.tree.get(row).parent;
-	},
-
-	_getDepth: function(row){
-		var depth = row.retrieve('htmltable:depth');
-		if (depth != null) return depth;
-		var match = row.className.match(/table\-depth\-(\d+)/);
-		if (!match) depth = 0;
-		else depth = match[1].toInt();
-		row.store('htmltable:depth', depth);
-		return depth;
 	}
 
 });
