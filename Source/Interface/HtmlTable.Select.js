@@ -46,7 +46,10 @@ HtmlTable = Class.refactor(HtmlTable, {
 		this._selectedRows = new Elements();
 		this._bound = {
 			mouseleave: this._mouseleave.bind(this),
-			clickRow: this._clickRow.bind(this)
+			clickRow: this._clickRow.bind(this),
+			activateKeyboard: function() {
+				if (this.keyboard && this._selectEnabled) this.keyboard.activate();
+			}.bind(this)
 		};
 		if (this.options.selectable) this.enableSelect();
 	},
@@ -209,7 +212,8 @@ HtmlTable = Class.refactor(HtmlTable, {
 		attach = $pick(attach, true);
 		var method = attach ? 'addEvents' : 'removeEvents';
 		this.element[method]({
-			mouseleave: this._bound.mouseleave
+			mouseleave: this._bound.mouseleave,
+			click: this._bound.activateKeyboard
 		});
 		this.body[method]({
 			'click:relay(tr)': this._bound.clickRow,
@@ -226,15 +230,12 @@ HtmlTable = Class.refactor(HtmlTable, {
 						e.preventDefault();
 						var to = this.body.rows[this._getRowByOffset(offset, !this.options.noSelectForHiddenRows)];
 						if (e.shift && to && this.isSelected(to)) {
-							console.log('moving, deslecting row');
 							this.deselectRow(this._focused);
 							this._focused = to;
 						} else {
 							if (to && (!this.options.allowMultiSelect || !e.shift)) {
-								console.log('select none');
 								this.selectNone();
 							}
-							console.log('shifting focus');
 							this._shiftFocus(offset, e);
 						}
 						if (held) {
