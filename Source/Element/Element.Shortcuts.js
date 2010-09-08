@@ -38,6 +38,7 @@ Element.implement({
 	},
 
 	hide: function(){
+                if (!this.isDisplayed()) return this;
 		var d;
 		try {
 			//IE fails here if the element is not in the dom
@@ -47,6 +48,7 @@ Element.implement({
 	},
 
 	show: function(display){
+                if (this.isDisplayed()) return this;
 		display = display || this.retrieve('element:_originalDisplay') || 'block';
 		return this.setStyle('display', (display == 'none') ? 'block' : display);
 	},
