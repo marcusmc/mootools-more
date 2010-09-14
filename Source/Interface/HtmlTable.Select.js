@@ -24,6 +24,16 @@ provides: [HtmlTable.Select]
 
 ...
 */
+if(!HtmlTable.prototype.serialize) { 
+        HtmlTable.implement('serialize', function () {
+                return {};
+        });
+}
+if(!HtmlTable.prototype.restore) {
+        HtmlTable.implement('restore', function() {
+                return;
+        });
+}
 
 HtmlTable = Class.refactor(HtmlTable, {
 
@@ -86,6 +96,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 			this._selectedRows.push(row);
 			row.addClass(this.options.classRowSelected);
 			this.fireEvent('rowFocus', [row, this._selectedRows]);
+                        this.fireEvent('stateChanged');
 		}
 		this._focused = row;
 		document.clearSelection();
@@ -100,11 +111,31 @@ HtmlTable = Class.refactor(HtmlTable, {
 		return this._selectedRows;
 	},
 
+        serialize: function() {
+                var previousSerialization = this.previous.apply(this, arguments);
+                if (this.options.selectable) {
+                        previousSerialization.selectedRows = this._selectedRows.map(function(row) {
+                                return $$(this.body.rows).indexOf(row);
+                        }.bind(this));
+                }
+                return previousSerialization;
+        },
+
+        restore: function(tableState) {
+                if(tableState.selectedRows) {
+                        tableState.selectedRows.each(function(index) {
+                                this.selectRow(this.body.rows[index]);
+                        }.bind(this));
+                }
+                this.previous.apply(this, arguments);
+        },
+
 	deselectRow: function(row, _nocheck){
 		if (!this.isSelected(row) || (!_nocheck && !this.body.getChildren().contains(row))) return;
 		this._selectedRows.erase(row);
 		row.removeClass(this.options.classRowSelected);
 		this.fireEvent('rowUnfocus', [row, this._selectedRows]);
+                this.fireEvent('stateChanged');
 		return this;
 	},
 
