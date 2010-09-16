@@ -24,6 +24,14 @@ provides: [HtmlTable.Select]
 
 ...
 */
+if(!HtmlTable.prototype.serialize) { 
+	HtmlTable.implement('serialize', function () {
+		return {};
+	});
+}
+if(!HtmlTable.prototype.restore) {
+	HtmlTable.implement('restore', $empty);
+}
 
 HtmlTable = Class.refactor(HtmlTable, {
 
@@ -86,12 +94,13 @@ HtmlTable = Class.refactor(HtmlTable, {
 			this._selectedRows.push(row);
 			row.addClass(this.options.classRowSelected);
 			this.fireEvent('rowFocus', [row, this._selectedRows]);
+			this.fireEvent('stateChanged');
 		}
 		this._focused = row;
 		document.clearSelection();
 		return this;
 	},
-	
+
 	isSelected: function(row){
 		return this._selectedRows.contains(row);
 	},
@@ -100,11 +109,31 @@ HtmlTable = Class.refactor(HtmlTable, {
 		return this._selectedRows;
 	},
 
+	serialize: function() {
+		var previousSerialization = this.previous.apply(this, arguments);
+		if (this.options.selectable) {
+			previousSerialization.selectedRows = this._selectedRows.map(function(row) {
+				return $A(this.body.rows).indexOf(row);
+			}.bind(this));
+		}
+		return previousSerialization;
+	},
+
+	restore: function(tableState) {
+		if(this.options.selectable && tableState.selectedRows) {
+			tableState.selectedRows.each(function(index) {
+				this.selectRow(this.body.rows[index]);
+			}.bind(this));
+		}
+		this.previous.apply(this, arguments);
+	},
+
 	deselectRow: function(row, _nocheck){
 		if (!this.isSelected(row) || (!_nocheck && !this.body.getChildren().contains(row))) return;
 		this._selectedRows.erase(row);
 		row.removeClass(this.options.classRowSelected);
 		this.fireEvent('rowUnfocus', [row, this._selectedRows]);
+		this.fireEvent('stateChanged');
 		return this;
 	},
 
@@ -143,6 +172,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 	deselectRange: function(startRow, endRow){
 		this.selectRange(startRow, endRow, true);
 	},
+
 /*
 	Private methods:
 */
@@ -256,12 +286,12 @@ HtmlTable = Class.refactor(HtmlTable, {
 					}.bind(this);
 					return mover;
 				}.bind(this);
-				
+
 				var clear = function(){
 					$clear(timer);
 					held = false;
 				};
-				
+
 				this.keyboard.addEvents({
 					'keydown:shift+up': move(-1),
 					'keydown:shift+down': move(1),
@@ -270,12 +300,12 @@ HtmlTable = Class.refactor(HtmlTable, {
 					'keyup:up': clear,
 					'keyup:down': clear
 				});
-				
+
 				var shiftHint = '';
 				if (this.options.allowMultiSelect && this.options.shiftForMultiSelect && this.options.useKeyboard) {
 					shiftHint = " (Shift multi-selects).";
 				}
-				
+
 				this.keyboard.addShortcuts({
 					'Select Previous Row': {
 						keys: 'up',
