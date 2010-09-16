@@ -16,8 +16,8 @@ td, th {
 	padding: 4px;
 	border-right: 1px solid #777;
 	border-top: 1px solid #777;
-        white-space: nowrap;
-        overflow: hidden;
+	white-space: nowrap;
+	overflow: hidden;
 }
 th, th:hover {
 	cursor: pointer;
@@ -31,14 +31,14 @@ th.table-th-sort-rev {
 	background: #fff url(/asset/widgets/bullet_arrow_up.png) no-repeat right 3px;
 }
 span.table-th-resizer  {
-        cursor:col-resize;
-        display:block;
-        height:100%;
-        position:absolute;
-        right:-3px;
-        top:0;
-        width:6px;
-        z-index:1;
+	cursor:col-resize;
+	display:block;
+	height:100%;
+	position:absolute;
+	right:-3px;
+	top:0;
+	width:6px;
+	z-index:1;
 }
 table.table-resizable th div {
   padding-right: 0;
@@ -427,24 +427,25 @@ table.table-resizable th div {
 	</table>
 
 
+
 <script src="/depender/build?require=More/HtmlTable.Resize,More/HtmlTable.Select,More/HtmlTable.Sort,Core/DomReady"></script>
 <script>
 var resizeTable = new HtmlTable($$('.resizeTable')[0],{
 	resizable : true,
-        sortable: true,
-        selectable: true,
-        resize: 'table'
+	sortable: true,
+	selectable: true,
+	resize: 'table'
 });
 var resizeNeighbor = new HtmlTable($$('.resizeNeighbor')[0],{
-        resizable: true,
-        sortable: true,
-        selectable: true,
-        resize: 'neighbor'
+	resizable: true,
+	sortable: true,
+	selectable: true,
+	resize: 'neighbor'
 });
 var maintainChanges = new HtmlTable($$('.maintainChanges')[0], {
-        resizable: true,
-        sortable: true,
-        selectable: true,
-        resize: 'maintainChanges'
+	resizable: true,
+	sortable: true,
+	selectable: true,
+	resize: 'maintainChanges'
 });
 </script>
