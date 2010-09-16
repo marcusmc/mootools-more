@@ -123,17 +123,18 @@ var HtmlTable = new Class({
 		};
 	},
 
-        wrapTableHeadersForPositioning: function() {
-                if(!this.headerWrappers) {
-                        this.headerWrappers = $$(this.head.cells).map(function(cell) {
-                                var thDiv = new Element('div');
-                                $each(cell.childNodes, function(node) {
-                                        thDiv.adopt(node);
-                                });
-                                thDiv.inject(cell);
-                                return thDiv;
-                        });
-                }
-                return this.headerWrappers;
-        }
+	wrapTableHeadersForPositioning: function() {
+		if(!this.headerWrappers) {
+			this.headerWrappers = $$(this.head.cells).map(function(cell) {
+				var thDiv = new Element('div');
+				$each(cell.childNodes, function(node) {
+					thDiv.adopt(node);
+				});
+				thDiv.inject(cell);
+				return thDiv;
+			});
+		}
+		return this.headerWrappers;
+	}
+
 });
