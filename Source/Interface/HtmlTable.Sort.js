@@ -26,6 +26,15 @@ provides: [HtmlTable.Sort]
 ...
 */
 
+if(!HtmlTable.prototype.serialize) { 
+	HtmlTable.implement('serialize', function () {
+		return {};
+	});
+}
+if(!HtmlTable.prototype.restore) {
+	HtmlTable.implement('restore', $empty);
+}
+
 HtmlTable = Class.refactor(HtmlTable, {
 
 	options: {/*
@@ -68,7 +77,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 		this.previous.apply(this, arguments);
 		if (this.sortEnabled) this.detectParsers();
 	},
-	
+
 	detectParsers: function(force){
 		if (!this.head) return;
 		var parsers = this.options.parsers, 
@@ -76,7 +85,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 
 		// auto-detect
 		this.wrapTableHeadersForPositioning();
-                this.parsers = $$(this.head.cells).map(function(cell, index) {
+		this.parsers = $$(this.head.cells).map(function(cell, index) {
 			if (!force && (cell.hasClass(this.options.classNoSort) || cell.retrieve('htmltable-parser'))) return cell.retrieve('htmltable-parser');
 			var headerWrapper = this.headerWrappers[index];
 			var sortSpan = new Element('span', {'html': '&#160;', 'class': this.options.classSortSpan}).inject(headerWrapper, 'top');
@@ -114,6 +123,22 @@ HtmlTable = Class.refactor(HtmlTable, {
 		var index = Array.indexOf(this.head.cells, el);
 		this.sort(index);
 		return false;
+	},
+
+	serialize: function() {
+		var previousSerialization = this.previous.apply(this, arguments);
+		if (this.options.sortable) {
+			previousSerialization.sortIndex = this.sorted.index;
+			previousSerialization.sortReverse = this.sorted.reverse;
+		}
+		return previousSerialization;
+	},
+
+	restore: function(tableState) {
+		if(this.options.sortable && tableState.sortIndex) {
+			this.sort(tableState.sortIndex, tableState.sortReverse);
+		}
+		this.previous.apply(this, arguments);
 	},
 
 	sort: function(index, reverse, pre) {
@@ -210,6 +235,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 		data = null;
 		if (rel) rel.grab(body);
 
+		this.fireEvent('stateChanged');
 		return this.fireEvent('sort', [body, index]);
 	},
 
