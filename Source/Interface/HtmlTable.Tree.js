@@ -54,7 +54,10 @@ provides: [HtmlTable.Tree]
 			if (this.options.writeTreeCSS) this._writeCss();
 			this.tree = new Table();
 			if (this.options.enableTree) this.enableTree();
-			this.addEvent('refresh', this._buildTree.pass([true, false], this));
+			this.addEvent('refresh', function(){
+				this._buildTree(true, false);
+				if (this.options.zebra) this.updateZebras();
+			}.bind(this));
 		},
 
 		enableTree: function(){
@@ -283,11 +286,6 @@ provides: [HtmlTable.Tree]
 				}
 				return rowData;
 			}.bind(this);
-
-			// var startRowData = this._getRowData(startRow),
-			//     prevDepth = startRow ? startRowData.depth : 0,
-			//     startDepth = prevDepth;
-			
 
 			var rowSetup = function(row){
 				if (row.hasClass('html-table-tree-ignore')) return;
