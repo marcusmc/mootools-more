@@ -19,11 +19,15 @@ requires:
   - /Class.refactor
   - /Element.Delegation
   - /Element.Shortcuts
+  - /Element.Measure
+  - /Fx.Scroll
 
 provides: [HtmlTable.Select]
 
 ...
 */
+(function(){
+
 if(!HtmlTable.prototype.serialize) { 
 	HtmlTable.implement('serialize', function () {
 		return {};
@@ -45,7 +49,8 @@ HtmlTable = Class.refactor(HtmlTable, {
 		shiftForMultiSelect: true,
 		allowMultiSelect: true,
 		selectable: false,
-		selectHiddenRows: false
+		selectHiddenRows: false,
+		scrollToSelected: true
 	},
 
 	initialize: function(){
@@ -98,6 +103,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 		}
 		this._focused = row;
 		document.clearSelection();
+		this.scrollTo(row);
 		return this;
 	},
 
@@ -173,6 +179,12 @@ HtmlTable = Class.refactor(HtmlTable, {
 		this.selectRange(startRow, endRow, true);
 	},
 
+	scrollTo: function(row) {
+		if (this.options.scrollToSelected) {
+			if (!this._parentScroller) this._parentScroller = new Fx.Scroll(getScrollParent(this.element), {duration: 0});
+			this._parentScroller.scrollIntoView(row);
+		}
+	},
 /*
 	Private methods:
 */
@@ -228,8 +240,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 		if (includeHiddenRows) {
 			index += offset;
 		} else {
-			var limit = 0,
-			    count = 0;
+			var count = 0;
 			if (offset > 0) {
 				while (count < offset && index < this.body.rows.length -1) {
 					index++;
@@ -331,3 +342,22 @@ HtmlTable = Class.refactor(HtmlTable, {
 	}
 
 });
+
+var isBody = function(element){
+	return (/^(?:body|html)$/i).test(element.tagName);
+};
+
+var getScrollParent = function(element){
+	var scrollParent,
+	    parent = element.getParent();
+	while (!scrollParent){
+		if (isBody(parent) || ['scroll', 'auto'].contains(parent.getStyle('overflow'))){
+			scrollParent = parent;
+		} else {
+			parent = parent.getParent();
+		}
+	}
+	return scrollParent;
+};
+
+})();
