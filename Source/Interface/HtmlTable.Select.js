@@ -275,7 +275,13 @@ HtmlTable = Class.refactor(HtmlTable, {
 				var move = function(offset){
 					var mover = function(e){
 						$clear(timer);
-						e.preventDefault();
+						if (!e.preventedDefault) {
+							//IE freaks out if you call this in a method that isn't an event handler
+							//because this mover method gets called when you hold down the arrow key
+							//we have to ensure we only prevent default once
+							e.preventDefault();
+							e.preventedDefault = true;
+						}
 						var to = this.body.rows[this._getRowByOffset(offset, this.options.selectHiddenRows)];
 						if (e.shift && to && this.isSelected(to)) {
 							this.deselectRow(this._focused);
