@@ -37,18 +37,20 @@ if(!HtmlTable.prototype.restore) {
 HtmlTable = Class.refactor(HtmlTable, {
 
 	options: {
+		//resizable: false,
 		// onColumnResize: $empty,
 		classHandle: 'table-th-resizer',
 		classResizableHeader: 'table-th-resizable',
 		classResizable: 'table-resizable',
 		classNoResize: 'table-th-noresize',
 		resize: 'neighbor',
-		setStylesOnStartup: 'true'
+		setStylesOnStartup: true
 	},
 
 	initialize: function () {
 		this.previous.apply(this, arguments);
 		if (this.options.resizable) {
+			this.wrapTableHeadersForPositioning();
 			this._boundResizeMethods = {
 				dragStart: this._dragStart.bind(this),
 				drag: this._drag.bind(this),

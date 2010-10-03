@@ -68,10 +68,12 @@ provides: [HtmlTable.Tree]
 					activateKeyboard: function() {
 						if (this.keyboard) this.keyboard.activate();
 					}.bind(this),
-					keyExpand: function(){
+					keyExpand: function(e){
+						if (e) e.preventDefault();
 						if (this._focused) this.expandSection(this._focused);
 					}.bind(this),
-					keyClose: function(){
+					keyClose: function(e){
+						if (e) e.preventDefault();
 						var row = this._focused;
 						if (row) {
 							if (this.isRowParent(row) && this.isExpanded(row)) {
