@@ -99,9 +99,10 @@ var HtmlTable = new Class({
 		return this;
 	},
 
-	push: function(row, rowProperties, target, tag){
+	push: function(row, rowProperties, target, tag, where){
+		where = where || 'bottom';
 		if ($type(row) == "element" && row.get('tag') == 'tr') {
-			row.inject(target || this.body);
+			row.inject(target || this.body, where);
 			return {
 				tr: row,
 				tds: row.getChildren('td')
@@ -118,9 +119,23 @@ var HtmlTable = new Class({
 		});
 
 		return {
-			tr: new Element('tr', rowProperties).inject(target || this.body).adopt(tds),
+			tr: new Element('tr', rowProperties).inject(target || this.body, where).adopt(tds),
 			tds: tds
 		};
+	},
+
+	wrapTableHeadersForPositioning: function() {
+		if(!this.headerWrappers) {
+			this.headerWrappers = $$(this.head.cells).map(function(cell) {
+				var thDiv = new Element('div');
+				$each(cell.childNodes, function(node) {
+					thDiv.adopt(node);
+				});
+				thDiv.inject(cell);
+				return thDiv;
+			});
+		}
+		return this.headerWrappers;
 	}
 
 });
