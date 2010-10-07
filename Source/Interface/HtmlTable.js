@@ -40,8 +40,9 @@ var HtmlTable = new Class({
 	property: 'HtmlTable',
 
 	initialize: function(){
-		var params = Array.link(arguments, {options: Object.type, table: Element.type});
+		var params = Array.link(arguments, {options: Object.type, table: Element.type, id: String.type});
 		this.setOptions(params.options);
+		if (!params.table && params.id) params.table = document.id(params.id);
 		this.element = params.table || new Element('table', this.options.properties);
 		if (this.occlude()) return this.occluded;
 		this.build();
@@ -127,9 +128,9 @@ var HtmlTable = new Class({
 		if(!this.headerWrappers) {
 			this.headerWrappers = $$(this.head.cells).map(function(cell) {
 				var thDiv = new Element('div');
-				$each(cell.childNodes, function(node) {
-					thDiv.adopt(node);
-				});
+				while(cell.childNodes.length > 0) {
+					thDiv.appendChild(cell.childNodes[0]);
+				}
 				thDiv.inject(cell);
 				return thDiv;
 			});
