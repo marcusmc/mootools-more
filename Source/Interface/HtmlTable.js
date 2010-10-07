@@ -128,9 +128,9 @@ var HtmlTable = new Class({
 		if(!this.headerWrappers) {
 			this.headerWrappers = $$(this.head.cells).map(function(cell) {
 				var thDiv = new Element('div');
-				$each(cell.childNodes, function(node) {
-					thDiv.adopt(node);
-				});
+				while(cell.childNodes.length > 0) {
+					thDiv.appendChild(cell.childNodes[0]);
+				}
 				thDiv.inject(cell);
 				return thDiv;
 			});
