@@ -322,6 +322,12 @@ Date.extend({
 		return new Date(utcSeconds);
 	},
 
+        isParsable: function(toCheck) {
+                return parsePatterns.some(function(pattern) {
+                        return Boolean(pattern.re.exec(toCheck));
+                });
+        },
+
 	orderIndex: function(unit){
 		return Date.getMsg('dateOrder').indexOf(unit) + 1;
 	},

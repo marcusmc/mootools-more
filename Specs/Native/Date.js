@@ -427,3 +427,16 @@ describe('Date.parse', {
 	}
 
 });
+
+describe('Date.isParsable', {
+
+        'should return true if the string value input can be parsed into a date, false otherwise': function(){
+                value_of(Date.isParsable("1999-12-31 23:59:59")).should_be(true);
+                value_of(Date.isParsable("19991231")).should_be(true);
+                value_of(Date.isParsable("12/31")).should_be(true);
+                value_of(Date.isParsable("31st December")).should_be(true);
+                value_of(Date.isParsable("Thu Oct 22 08:11:23 +0000 2009")).should_be(true);
+                value_of(Date.isParsable("blahblabhblah")).should_be(false);
+                value_of(Date.isParsable(1288919000287)).should_be(false);
+        }
+});
