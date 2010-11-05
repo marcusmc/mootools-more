@@ -498,6 +498,19 @@ Plural form of [Date:defineParser][].
 
 1. format - can be multiple format arguments or an array of formats.
 
+Static Method: isParsable {#Date:isParsable}
+--------------------------------------------
+
+Returns true if the value is a string which can be parsed with the currently available parse patterns.  Returns false otherwise.
+
+### Syntax
+
+	Date.isParsable(value);
+
+### Arguments
+
+1. value - the value which which will be checked for parasability
+
 Static Method: define2DigitYearStart {#Date:define2DigitYearStart}
 ------------------------------------------------------------------
 
