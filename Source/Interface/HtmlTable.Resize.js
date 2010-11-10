@@ -64,14 +64,16 @@ HtmlTable = Class.refactor(HtmlTable, {
 
 	build: function() {
 		this.previous.apply(this, arguments);
-		this.headerCells = $$(this.head.cells);
+		if (this.head) this.headerCells = $$(this.head.cells);
 	},
 
 	enableResize: function(){
-		this.element.addClass(this.options.classResizable);
-		this._addResizeElems();
-		this._attachResizers(true);
-		this._resizeEnabled = true;
+		if (this.headerCells) {
+			this.element.addClass(this.options.classResizable);
+			this._addResizeElems();
+			this._attachResizers(true);
+			this._resizeEnabled = true;
+		}
 		return this;
 	},
 
@@ -95,7 +97,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 	},
 
 	restore: function(tableState) {
-		if(this.options.resizable && tableState.resizeWidths) {
+		if(this.options.resizable && tableState.resizeWidths && this.headerCells) {
 			this._resizeWidths = tableState.resizeWidths;
 			this.headerCells.each( function(cell, index) {
 				cell.setStyle('width', this._resizeWidths[index].curWidth);
@@ -111,6 +113,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 
 
 	_addResizeElems: function() {
+		if (!this.headerCells) return;
 		this._constraints = {};
 		this.headerCells.each(function(cell, index) {
 			if(!cell.hasClass(this.options.classNoResize)) {
@@ -155,6 +158,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 	},
 
 	_getHeaderIndex: function(header) {
+		if (!this.headerCells) return -1;
 		return this.headerCells.indexOf(header);
 	},
 
