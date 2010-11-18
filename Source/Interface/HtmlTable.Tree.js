@@ -188,9 +188,11 @@ provides: [HtmlTable.Tree]
 			    nextAtDepth = row.getAllNext('tr.table-depth-' + depth),
 			    potentialChildren = row.getAllNext('tr.table-depth-' + (depth + 1)),
 			    index = 0;
-			while (potentialChildren[index] && potentialChildren[index] != nextAtDepth) {
+			while (potentialChildren[index]) {
 				var kidData = this._getRowData(potentialChildren[index], null, true);
 				rowData.children.push(potentialChildren[index]);
+				var next = potentialChildren[index].getNext();
+				if (next && nextAtDepth.contains(next)) break;
 				index++;
 			}
 			return rowData.children;
