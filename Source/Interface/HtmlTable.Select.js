@@ -19,11 +19,23 @@ requires:
   - /Class.refactor
   - /Element.Delegation
   - /Element.Shortcuts
+  - /Element.Measure
+  - /Fx.Scroll
 
 provides: [HtmlTable.Select]
 
 ...
 */
+(function(){
+
+if(!HtmlTable.prototype.serialize) { 
+	HtmlTable.implement('serialize', function () {
+		return {};
+	});
+}
+if(!HtmlTable.prototype.restore) {
+	HtmlTable.implement('restore', $empty);
+}
 
 HtmlTable = Class.refactor(HtmlTable, {
 
@@ -36,7 +48,9 @@ HtmlTable = Class.refactor(HtmlTable, {
 		classSelectable: 'table-selectable',
 		shiftForMultiSelect: true,
 		allowMultiSelect: true,
-		selectable: false
+		selectable: false,
+		selectHiddenRows: false,
+		scrollToSelected: true
 	},
 
 	initialize: function(){
@@ -45,7 +59,10 @@ HtmlTable = Class.refactor(HtmlTable, {
 		this._selectedRows = new Elements();
 		this._bound = {
 			mouseleave: this._mouseleave.bind(this),
-			clickRow: this._clickRow.bind(this)
+			clickRow: this._clickRow.bind(this),
+			activateKeyboard: function() {
+				if (this.keyboard && this._selectEnabled) this.keyboard.activate();
+			}.bind(this)
 		};
 		if (this.options.selectable) this.enableSelect();
 	},
@@ -82,21 +99,47 @@ HtmlTable = Class.refactor(HtmlTable, {
 			this._selectedRows.push(row);
 			row.addClass(this.options.classRowSelected);
 			this.fireEvent('rowFocus', [row, this._selectedRows]);
+			this.fireEvent('stateChanged');
 		}
 		this._focused = row;
 		document.clearSelection();
+		this.scrollTo(row);
 		return this;
 	},
-	
+
 	isSelected: function(row){
 		return this._selectedRows.contains(row);
 	},
-	
+
+	getSelected: function(){
+		return this._selectedRows;
+	},
+
+	serialize: function() {
+		var previousSerialization = this.previous.apply(this, arguments);
+		if (this.options.selectable) {
+			previousSerialization.selectedRows = this._selectedRows.map(function(row) {
+				return $A(this.body.rows).indexOf(row);
+			}.bind(this));
+		}
+		return previousSerialization;
+	},
+
+	restore: function(tableState) {
+		if(this.options.selectable && tableState.selectedRows) {
+			tableState.selectedRows.each(function(index) {
+				this.selectRow(this.body.rows[index]);
+			}.bind(this));
+		}
+		this.previous.apply(this, arguments);
+	},
+
 	deselectRow: function(row, _nocheck){
 		if (!this.isSelected(row) || (!_nocheck && !this.body.getChildren().contains(row))) return;
 		this._selectedRows.erase(row);
 		row.removeClass(this.options.classRowSelected);
 		this.fireEvent('rowUnfocus', [row, this._selectedRows]);
+		this.fireEvent('stateChanged');
 		return this;
 	},
 
@@ -125,13 +168,22 @@ HtmlTable = Class.refactor(HtmlTable, {
 			endRow = tmp;
 		}
 
-		for(var i = startRow; i <= endRow; i++) this[method](rows[i], true);
+		for(var i = startRow; i <= endRow; i++) {
+			if (this.options.selectHiddenRows || rows[i].isDisplayed()) this[method](rows[i], true);
+		}
 
 		return this;
 	},
 
 	deselectRange: function(startRow, endRow){
 		this.selectRange(startRow, endRow, true);
+	},
+
+	scrollTo: function(row) {
+		if (this.options.scrollToSelected) {
+			if (!this._parentScroller) this._parentScroller = new Fx.Scroll(getScrollParent(this.element), {duration: 0});
+			this._parentScroller.scrollIntoView(row, 'y');
+		}
 	},
 /*
 	Private methods:
@@ -164,7 +216,7 @@ HtmlTable = Class.refactor(HtmlTable, {
 
 	_shiftFocus: function(offset, event){
 		if (!this._focused) return this.selectRow(this.body.rows[0], event);
-		var to = this._getRowByOffset(offset);
+		var to = this._getRowByOffset(offset, this.options.selectHiddenRows);
 		if (to === null || this._focused == this.body.rows[to]) return this;
 		this.toggleRow(this.body.rows[to], event);
 	},
@@ -181,11 +233,26 @@ HtmlTable = Class.refactor(HtmlTable, {
 		this._rangeStart = row;
 	},
 
-	_getRowByOffset: function(offset){
+	_getRowByOffset: function(offset, includeHiddenRows){
 		if (!this._focused) return 0;
-		var index = Array.indexOf(this.body.rows, this._focused) + offset;
-		if (index < 0) index = null;
-		if (index >= this.body.rows.length) index = null;
+		var index = Array.indexOf(this.body.rows, this._focused);
+		if ((index == 0 && offset < 0) || (index == this.body.rows.length -1 && offset > 0)) return null;
+		if (includeHiddenRows) {
+			index += offset;
+		} else {
+			var count = 0;
+			if (offset > 0) {
+				while (count < offset && index < this.body.rows.length -1) {
+					index++;
+					if (this.body.rows[index].isDisplayed()) count++;
+				}
+			} else {
+				while (count > offset && index > 0) {
+					index--;
+					if (this.body.rows[index].isDisplayed()) count--;
+				}
+			}
+		}
 		return index;
 	},
 
@@ -193,20 +260,29 @@ HtmlTable = Class.refactor(HtmlTable, {
 		attach = $pick(attach, true);
 		var method = attach ? 'addEvents' : 'removeEvents';
 		this.element[method]({
-			mouseleave: this._bound.mouseleave
+			mouseleave: this._bound.mouseleave,
+			click: this._bound.activateKeyboard
 		});
 		this.body[method]({
 			'click:relay(tr)': this._bound.clickRow,
 			'contextmenu:relay(tr)': this._bound.clickRow
 		});
 		if (this.options.useKeyboard || this.keyboard){
-			if (!this.keyboard) {
+			if (!this.keyboard) this.keyboard = new Keyboard();
+			if (!this._selectKeysDefined) {
+				this._selectKeysDefined = true;
 				var timer, held;
 				var move = function(offset){
 					var mover = function(e){
 						$clear(timer);
-						e.preventDefault();
-						var to = this.body.rows[this._getRowByOffset(offset)];
+						if (!e.preventedDefault) {
+							//IE freaks out if you call this in a method that isn't an event handler
+							//because this mover method gets called when you hold down the arrow key
+							//we have to ensure we only prevent default once
+							e.preventDefault();
+							e.preventedDefault = true;
+						}
+						var to = this.body.rows[this._getRowByOffset(offset, this.options.selectHiddenRows)];
 						if (e.shift && to && this.isSelected(to)) {
 							this.deselectRow(this._focused);
 							this._focused = to;
@@ -227,29 +303,26 @@ HtmlTable = Class.refactor(HtmlTable, {
 					}.bind(this);
 					return mover;
 				}.bind(this);
-				
+
 				var clear = function(){
 					$clear(timer);
 					held = false;
 				};
-				
-				this.keyboard = new Keyboard({
-					events: {
-						'keydown:shift+up': move(-1),
-						'keydown:shift+down': move(1),
-						'keyup:shift+up': clear,
-						'keyup:shift+down': clear,
-						'keyup:up': clear,
-						'keyup:down': clear
-					},
-					active: true
+
+				this.keyboard.addEvents({
+					'keydown:shift+up': move(-1),
+					'keydown:shift+down': move(1),
+					'keyup:shift+up': clear,
+					'keyup:shift+down': clear,
+					'keyup:up': clear,
+					'keyup:down': clear
 				});
-				
+
 				var shiftHint = '';
 				if (this.options.allowMultiSelect && this.options.shiftForMultiSelect && this.options.useKeyboard) {
 					shiftHint = " (Shift multi-selects).";
 				}
-				
+
 				this.keyboard.addShortcuts({
 					'Select Previous Row': {
 						keys: 'up',
@@ -275,3 +348,22 @@ HtmlTable = Class.refactor(HtmlTable, {
 	}
 
 });
+
+var isBody = function(element){
+	return (/^(?:body|html)$/i).test(element.tagName);
+};
+
+var getScrollParent = function(element){
+	var scrollParent,
+	    parent = element.getParent();
+	while (!scrollParent){
+		if (isBody(parent) || ['scroll', 'auto'].contains(parent.getStyle('overflow'))){
+			scrollParent = parent;
+		} else {
+			parent = parent.getParent();
+		}
+	}
+	return scrollParent;
+};
+
+})();

@@ -40,8 +40,9 @@ var HtmlTable = new Class({
 	property: 'HtmlTable',
 
 	initialize: function(){
-		var params = Array.link(arguments, {options: Object.type, table: Element.type});
+		var params = Array.link(arguments, {options: Object.type, table: Element.type, id: String.type});
 		this.setOptions(params.options);
+		if (!params.table && params.id) params.table = document.id(params.id);
 		this.element = params.table || new Element('table', this.options.properties);
 		if (this.occlude()) return this.occluded;
 		this.build();
@@ -98,9 +99,10 @@ var HtmlTable = new Class({
 		return this;
 	},
 
-	push: function(row, rowProperties, target, tag){
+	push: function(row, rowProperties, target, tag, where){
+		where = where || 'bottom';
 		if ($type(row) == "element" && row.get('tag') == 'tr') {
-			row.inject(target || this.body);
+			row.inject(target || this.body, where);
 			return {
 				tr: row,
 				tds: row.getChildren('td')
@@ -117,9 +119,23 @@ var HtmlTable = new Class({
 		});
 
 		return {
-			tr: new Element('tr', rowProperties).inject(target || this.body).adopt(tds),
+			tr: new Element('tr', rowProperties).inject(target || this.body, where).adopt(tds),
 			tds: tds
 		};
+	},
+
+	wrapTableHeadersForPositioning: function() {
+		if(!this.headerWrappers) {
+			this.headerWrappers = $$(this.head.cells).map(function(cell) {
+				var thDiv = new Element('div');
+				while(cell.childNodes.length > 0) {
+					thDiv.appendChild(cell.childNodes[0]);
+				}
+				thDiv.inject(cell);
+				return thDiv;
+			});
+		}
+		return this.headerWrappers;
 	}
 
 });
