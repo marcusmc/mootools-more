@@ -87,7 +87,7 @@ this.Tips = new Class({
 		$$(elements).each(function(element){
 			var title = read(this.options.title, element),
 				text = read(this.options.text, element);
-			
+
 			element.erase('title').store('tip:native', title).retrieve('tip:title', title);
 			element.retrieve('tip:text', text);
 			this.fireEvent('attach', [element]);
@@ -185,7 +185,24 @@ this.Tips = new Class({
 	hide: function(element){
 		if (!this.tip) document.id(this);
 		this.fireEvent('hide', [this.tip, element]);
-	}
+	},
+
+        setTitle: function(title) {
+                titleElem = this.container.getElement('.tip-title');
+                if (titleElem) {
+                       titleElem.empty();
+                       this.fill(titleElem, title);
+                }
+        },
+
+        setText: function(text) {
+                textElem = this.container.getElement('.tip-text');
+                if (textElem) {
+                        textElem.empty();
+                        this.fill(textElem, text);
+                }
+        }
+
 
 });
 
