@@ -87,7 +87,7 @@ this.Tips = new Class({
 		$$(elements).each(function(element){
 			var title = read(this.options.title, element),
 				text = read(this.options.text, element);
-			
+
 			element.erase('title').store('tip:native', title).retrieve('tip:title', title);
 			element.retrieve('tip:text', text);
 			this.fireEvent('attach', [element]);
@@ -178,7 +178,7 @@ this.Tips = new Class({
 
 	show: function(element){
 		if (!this.tip) document.id(this);
-		if (!this.tip.getParent()) this.tip.inject(document.body);
+		if (!this.tip.parentNode || !document.body.hasChild(this.tip)) this.tip.inject(document.body);
 		this.fireEvent('show', [this.tip, element]);
 	},
 
@@ -186,7 +186,6 @@ this.Tips = new Class({
 		if (!this.tip) document.id(this);
 		this.fireEvent('hide', [this.tip, element]);
 	}
-
 });
 
 })();
