@@ -75,6 +75,7 @@ sources:
   - "Source/Interface/Mask.js"
   - "Source/Interface/Scroller.js"
   - "Source/Interface/Tips.js"
+  - "Source/Interface/DynamicTips.js"
   - "Source/Interface/Spinner.js"
   - "Source/Localization/Date.English.US.js"
   - "Source/Localization/Form.Validator.English.js"
