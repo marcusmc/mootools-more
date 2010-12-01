@@ -63,7 +63,9 @@ class="toolTipElement2"/>
 var elements = [
 	$$('.toolTipElement'),
 	$$('.toolTipElement2'),
-	$$('.toolTipElement3')
+	$$('.toolTipElement3'),
+	$$('.toolTipElement4'),
+	$$('.toolTipElement5')
 ];
 
 var instances = [
@@ -82,6 +84,20 @@ var instances = [
 		offset: {
 			x: 10,
 			y: 70
+		}
+	}),
+
+	new Tips(elements[4], {
+		onShow: function(tip, el){
+			this.setText(new Date().toString());
+			this.tip.setStyle('display', 'block');
+			this._timer = (function(){
+				this.setText(new Date().toString());
+			}).periodical(500, this);
+		},
+		onHide: function(){
+			this.tip.setStyle('display', 'none');
+			clearInterval(this._timer);
 		}
 	})
 
