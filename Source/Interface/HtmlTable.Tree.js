@@ -138,7 +138,7 @@ provides: [HtmlTable.Tree]
 			row.removeClass('table-depth-' + rowData.depth);
 			this._getRowData(rowData.parent).children.erase(row);
 			delete rowData.parent;
-			this.fireEvent('removeRowToTree', row);
+			this.fireEvent('removeRowFromTree', row);
 			return this;
 		},
 
