@@ -56,7 +56,8 @@ this.Tips = new Class({
 		className: 'tip-wrap',
 		offset: {x: 16, y: 16},
 		windowPadding: {x:0, y:0},
-		fixed: false
+		fixed: false,
+		showOnEnter: true
 	},
 
 	initialize: function(){
@@ -136,7 +137,7 @@ this.Tips = new Class({
 
 		clearTimeout(this.timer);
 		this.timer = (function(){
-			this.show(element);
+			if (this.options.showOnEnter) this.show(element);
 			this.position((this.options.fixed) ? {page: element.getPosition()} : event);
 		}).delay(this.options.showDelay, this);
 	},
